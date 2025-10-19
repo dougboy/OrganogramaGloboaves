@@ -16,13 +16,16 @@ const PASSWORD_HASH = buildHash(ADMIN_PASSWORD);
 
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
+
   if (username !== ADMIN_USER) {
     return res.status(401).json({ message: 'Credenciais inválidas.' });
   }
+
   const isValid = bcrypt.compareSync(password, PASSWORD_HASH);
   if (!isValid) {
     return res.status(401).json({ message: 'Credenciais inválidas.' });
   }
+
   const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '8h' });
   return res.json({ token });
 });

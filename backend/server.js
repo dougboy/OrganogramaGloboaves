@@ -1,6 +1,7 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 require('dotenv').config();
 
 // Inicializa banco e dependências
@@ -26,6 +27,29 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/organogramas', express.static(path.join(__dirname, 'public', 'organogramas')));
 app.use('/empresa', express.static(path.join(__dirname, 'public', 'organogramas')));
+
+const organogramsDir = path.join(__dirname, 'public', 'organogramas');
+
+const serveOrganogram = (req, res, next) => {
+  const { slug } = req.params;
+  if (!slug) return next();
+
+  const slugDir = path.resolve(organogramsDir, slug);
+  const relative = path.relative(organogramsDir, slugDir);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    return res.status(404).send('Organograma não encontrado.');
+  }
+
+  const indexFile = path.join(slugDir, 'index.html');
+  if (fs.existsSync(indexFile)) {
+    return res.sendFile(indexFile);
+  }
+
+  return next();
+};
+
+app.get('/empresa/:slug', serveOrganogram);
+app.get('/empresa/:slug/', serveOrganogram);
 
 // Rotas principais
 app.use('/api', authRoutes);

@@ -18,6 +18,7 @@ import {
   getCollaborators,
   updateCollaborator,
 } from '../services/collaborators';
+import { API_BASE_URL } from '../services/api';
 
 const DashboardPage = () => {
   const [companies, setCompanies] = useState([]);
@@ -30,7 +31,16 @@ const DashboardPage = () => {
   const [message, setMessage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const publicBase = useMemo(() => import.meta.env.VITE_API_URL || 'http://localhost:4000', []);
+  const publicBase = useMemo(() => (API_BASE_URL || '').replace(/\/$/, ''), []);
+
+  const buildAssetUrl = (path) => {
+    if (!path) return null;
+    const cleanPath = path.replace(/^\/+/, '');
+    if (!publicBase) {
+      return `/${cleanPath}`;
+    }
+    return `${publicBase}/${cleanPath}`;
+  };
 
   useEffect(() => {
     const loadCompanies = async () => {
@@ -40,7 +50,14 @@ const DashboardPage = () => {
         setCompanies(
           data.map((company) => ({
             ...company,
-            public_url: `${publicBase.replace(/\/$/, '')}/empresa/${company.slug}`,
+            public_url:
+              company.public_url && company.public_url.startsWith('http')
+                ? company.public_url
+                : company.slug
+                ? publicBase
+                  ? `${publicBase}/empresa/${company.slug}`
+                  : `/empresa/${company.slug}`
+                : null,
           }))
         );
         if (data.length > 0) {
@@ -66,7 +83,14 @@ const DashboardPage = () => {
     const data = await getCompanies();
     const mapped = data.map((company) => ({
       ...company,
-      public_url: `${publicBase.replace(/\/$/, '')}/empresa/${company.slug}`,
+      public_url:
+        company.public_url && company.public_url.startsWith('http')
+          ? company.public_url
+          : company.slug
+          ? publicBase
+            ? `${publicBase}/empresa/${company.slug}`
+            : `/empresa/${company.slug}`
+          : null,
     }));
     setCompanies(mapped);
     if (selectId) {
@@ -77,20 +101,12 @@ const DashboardPage = () => {
   const handleSelectCompany = async (id) => {
     try {
       const data = await getCompanyWithPeople(id);
-      const normalizedLogo = data.logo_url
-        ? data.logo_url
-        : data.logo_path
-        ? `${publicBase.replace(/\/$/, '')}/${data.logo_path.replace(/^\//, '')}`
-        : null;
+      const normalizedLogo = data.logo_url || buildAssetUrl(data.logo_path);
       setSelectedCompany({ ...data, logo_url: normalizedLogo });
       setCollaborators(
         data.collaborators.map((col) => ({
           ...col,
-          photo_url: col.photo_url
-            ? col.photo_url
-            : col.photo_path
-            ? `${publicBase.replace(/\/$/, '')}/${col.photo_path.replace(/^\//, '')}`
-            : null,
+          photo_url: col.photo_url || buildAssetUrl(col.photo_path),
         }))
       );
     } catch (error) {
@@ -148,7 +164,7 @@ const DashboardPage = () => {
       setCollaborators(
         updated.map((col) => ({
           ...col,
-          photo_url: col.photo_url || (col.photo_path ? `${publicBase.replace(/\/$/, '')}/${col.photo_path}` : null),
+          photo_url: col.photo_url || buildAssetUrl(col.photo_path),
         }))
       );
     } catch (error) {
@@ -167,7 +183,7 @@ const DashboardPage = () => {
       setCollaborators(
         list.map((col) => ({
           ...col,
-          photo_url: col.photo_url || (col.photo_path ? `${publicBase.replace(/\/$/, '')}/${col.photo_path}` : null),
+          photo_url: col.photo_url || buildAssetUrl(col.photo_path),
         }))
       );
     } catch (error) {
@@ -185,7 +201,7 @@ const DashboardPage = () => {
       setCollaborators(
         list.map((col) => ({
           ...col,
-          photo_url: col.photo_url || (col.photo_path ? `${publicBase.replace(/\/$/, '')}/${col.photo_path}` : null),
+          photo_url: col.photo_url || buildAssetUrl(col.photo_path),
         }))
       );
     } catch (error) {

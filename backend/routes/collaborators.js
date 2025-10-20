@@ -21,16 +21,35 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-const buildPublicPath = (filePath) => {
+const resolvePublicBase = (req) => {
+  const envBase = (process.env.PUBLIC_BASE_URL || '').trim();
+  if (envBase) {
+    return envBase.replace(/\/$/, '');
+  }
+
+  const host = req.get('host');
+  if (!host) {
+    return '';
+  }
+
+  const forwardedProto = req.get('x-forwarded-proto');
+  const protocol = forwardedProto ? forwardedProto.split(',')[0] : req.protocol;
+  return `${protocol}://${host}`.replace(/\/$/, '');
+};
+
+const buildPublicPath = (filePath, req) => {
   if (!filePath) return null;
   const relative = path.relative(path.join(__dirname, '..'), filePath).replace(/\\/g, '/');
-  const baseUrl = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  const baseUrl = resolvePublicBase(req);
+  if (!baseUrl) {
+    return `/${relative}`;
+  }
   return `${baseUrl}/${relative}`;
 };
 
-const serializeCollaborator = (collaborator) => ({
+const serializeCollaborator = (collaborator, req) => ({
   ...collaborator,
-  photo_url: buildPublicPath(collaborator.photo_path),
+  photo_url: buildPublicPath(collaborator.photo_path, req),
 });
 
 router.get('/', (req, res) => {
@@ -39,7 +58,9 @@ router.get('/', (req, res) => {
   if (!company) {
     return res.status(404).json({ message: 'Empresa não encontrada.' });
   }
-  const collaborators = collaboratorModel.findByCompany(companyId).map(serializeCollaborator);
+  const collaborators = collaboratorModel
+    .findByCompany(companyId)
+    .map((collaborator) => serializeCollaborator(collaborator, req));
   return res.json(collaborators);
 });
 
@@ -62,15 +83,16 @@ router.post('/', upload.single('photo'), (req, res) => {
     }
     const collaborator = serializeCollaborator(
       collaboratorModel.create({
-      companyId,
-      name,
-      role,
-      email,
-      department,
-      phone,
-      managerId: managerId ? Number(managerId) : null,
-      photoPath: req.file ? req.file.path : null
-      })
+        companyId,
+        name,
+        role,
+        email,
+        department,
+        phone,
+        managerId: managerId ? Number(managerId) : null,
+        photoPath: req.file ? req.file.path : null,
+      }),
+      req
     );
     return res.status(201).json(collaborator);
   } catch (error) {
@@ -103,14 +125,15 @@ router.put('/:collaboratorId', upload.single('photo'), async (req, res) => {
     }
     const updated = serializeCollaborator(
       collaboratorModel.update(collaboratorId, {
-      name: name || collaborator.name,
-      role: role || collaborator.role,
-      email,
-      department,
-      phone,
-      managerId: managerId ? Number(managerId) : null,
-      photoPath
-    })
+        name: name || collaborator.name,
+        role: role || collaborator.role,
+        email,
+        department,
+        phone,
+        managerId: managerId ? Number(managerId) : null,
+        photoPath,
+      }),
+      req
     );
     return res.json(updated);
   } catch (error) {

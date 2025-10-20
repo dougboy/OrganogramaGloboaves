@@ -36,8 +36,10 @@ const resolveBaseURL = () => {
   return normalizeUrl(`${protocol}//${hostname}`);
 };
 
+export const API_BASE_URL = resolveBaseURL();
+
 const api = axios.create({
-  baseURL: resolveBaseURL(),
+  baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use((config) => {

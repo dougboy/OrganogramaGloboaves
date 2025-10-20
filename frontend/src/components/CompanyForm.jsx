@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ThemeSelector from './ThemeSelector';
+import { API_BASE_URL } from '../services/api';
 
 const defaultValues = {
   name: '',
@@ -15,6 +16,17 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
     ...initialData,
   }));
   const [logo, setLogo] = useState(null);
+
+  const normalizedBase = (API_BASE_URL || '').replace(/\/$/, '');
+
+  const buildAssetUrl = (path) => {
+    if (!path) return null;
+    const cleanPath = path.replace(/^\/+/, '');
+    if (!normalizedBase) {
+      return `/${cleanPath}`;
+    }
+    return `${normalizedBase}/${cleanPath}`;
+  };
 
   useEffect(() => {
     setForm({ ...defaultValues, ...initialData });
@@ -95,15 +107,12 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
           <div>
             <label className="text-sm font-medium text-slate-600">Logotipo</label>
             <div className="mt-2 flex items-center gap-4">
-              {(logo || form.logo_url) && (
+              {(logo || form.logo_url || form.logo_path) && (
                 <img
                   src={
                     logo
                       ? URL.createObjectURL(logo)
-                      : form.logo_url ||
-                        (form.logo_path
-                          ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${form.logo_path?.replace(/^\//, '/')}`
-                          : null)
+                      : form.logo_url || buildAssetUrl(form.logo_path)
                   }
                   alt="Pré-visualização do logotipo"
                   className="h-16 w-16 rounded-2xl border border-slate-200 object-cover shadow-sm"

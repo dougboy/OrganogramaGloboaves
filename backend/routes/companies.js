@@ -24,24 +24,45 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-const buildPublicPath = (filePath) => {
+const resolvePublicBase = (req) => {
+  const envBase = (process.env.PUBLIC_BASE_URL || '').trim();
+  if (envBase) {
+    return envBase.replace(/\/$/, '');
+  }
+
+  const host = req.get('host');
+  if (!host) {
+    return '';
+  }
+
+  const forwardedProto = req.get('x-forwarded-proto');
+  const protocol = forwardedProto ? forwardedProto.split(',')[0] : req.protocol;
+  return `${protocol}://${host}`.replace(/\/$/, '');
+};
+
+const buildPublicPath = (filePath, req) => {
   if (!filePath) return null;
   const relative = path.relative(path.join(__dirname, '..'), filePath).replace(/\\/g, '/');
-  const baseUrl = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  const baseUrl = resolvePublicBase(req);
+  if (!baseUrl) {
+    return `/${relative}`;
+  }
   return `${baseUrl}/${relative}`;
 };
 
-const serializeCompany = (company) => {
+const serializeCompany = (company, req) => {
   if (!company) return null;
+  const baseUrl = resolvePublicBase(req);
   return {
     ...company,
-    logo_url: buildPublicPath(company.logo_path),
+    logo_url: buildPublicPath(company.logo_path, req),
+    public_url: company.slug ? `${baseUrl}/empresa/${company.slug}` : null,
   };
 };
 
-const serializeCollaborator = (collaborator) => ({
+const serializeCollaborator = (collaborator, req) => ({
   ...collaborator,
-  photo_url: buildPublicPath(collaborator.photo_path),
+  photo_url: buildPublicPath(collaborator.photo_path, req),
 });
 
 const buildUniqueSlug = (name, currentId = null) => {
@@ -61,7 +82,7 @@ const buildUniqueSlug = (name, currentId = null) => {
 router.use(authenticate);
 
 router.get('/', (req, res) => {
-  const companies = companyModel.findAll().map(serializeCompany);
+  const companies = companyModel.findAll().map((company) => serializeCompany(company, req));
   return res.json(companies);
 });
 
@@ -70,8 +91,10 @@ router.get('/:id', (req, res) => {
   if (!company) {
     return res.status(404).json({ message: 'Empresa não encontrada.' });
   }
-  const collaborators = collaboratorModel.findByCompany(company.id).map(serializeCollaborator);
-  return res.json({ ...serializeCompany(company), collaborators });
+  const collaborators = collaboratorModel
+    .findByCompany(company.id)
+    .map((collaborator) => serializeCollaborator(collaborator, req));
+  return res.json({ ...serializeCompany(company, req), collaborators });
 });
 
 router.post('/', upload.single('logo'), async (req, res) => {
@@ -83,14 +106,15 @@ router.post('/', upload.single('logo'), async (req, res) => {
     const slug = buildUniqueSlug(name);
     const company = serializeCompany(
       companyModel.create({
-      name,
-      cnpj,
-      description,
-      themeType,
-      themeValue,
-      logoPath: req.file ? req.file.path : null,
-      slug
-      })
+        name,
+        cnpj,
+        description,
+        themeType,
+        themeValue,
+        logoPath: req.file ? req.file.path : null,
+        slug,
+      }),
+      req
     );
     return res.status(201).json(company);
   } catch (error) {
@@ -117,14 +141,15 @@ router.put('/:id', upload.single('logo'), async (req, res) => {
     }
     const updated = serializeCompany(
       companyModel.update(id, {
-      name: name || existing.name,
-      cnpj,
-      description,
-      themeType: themeType || existing.theme_type,
-      themeValue: themeValue || existing.theme_value,
-      logoPath,
-      slug
-      })
+        name: name || existing.name,
+        cnpj,
+        description,
+        themeType: themeType || existing.theme_type,
+        themeValue: themeValue || existing.theme_value,
+        logoPath,
+        slug,
+      }),
+      req
     );
     return res.json(updated);
   } catch (error) {
@@ -159,7 +184,8 @@ router.post('/:id/generate', async (req, res) => {
       return res.status(404).json({ message: 'Empresa não encontrada.' });
     }
     const collaborators = collaboratorModel.findByCompany(company.id);
-    const { publicUrl } = await generateOrganogram({ company, collaborators });
+    const publicBase = resolvePublicBase(req);
+    const { publicUrl } = await generateOrganogram({ company, collaborators, publicBase });
     return res.json({ message: 'Organograma gerado com sucesso!', url: publicUrl });
   } catch (error) {
     console.error(error);

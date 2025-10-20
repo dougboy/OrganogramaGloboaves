@@ -13,6 +13,8 @@ const authenticate = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+app.set('trust proxy', true);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

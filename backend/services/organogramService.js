@@ -48,7 +48,7 @@ const copyAssets = async (company, collaborators, targetDir) => {
   return { logoPublicPath, collaborators: collaboratorsWithAssets };
 };
 
-const generateOrganogram = async ({ company, collaborators }) => {
+const generateOrganogram = async ({ company, collaborators, publicBase }) => {
   const slug = company.slug;
   const outputDir = path.join(__dirname, '..', 'public', 'organogramas', slug);
   await fs.ensureDir(outputDir);
@@ -82,11 +82,11 @@ const generateOrganogram = async ({ company, collaborators }) => {
 
   await fs.writeFile(path.join(outputDir, 'index.html'), html, 'utf-8');
 
-  const publicBase = process.env.PUBLIC_BASE_URL || '';
-  const publicUrl = `${publicBase.replace(/\/$/, '')}/empresa/${slug}`;
+  const base = (publicBase || process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  const normalizedUrl = base ? `${base}/empresa/${slug}` : `/empresa/${slug}`;
   return {
     slug,
-    publicUrl
+    publicUrl: normalizedUrl
   };
 };
 

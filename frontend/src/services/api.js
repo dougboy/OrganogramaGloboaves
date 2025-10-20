@@ -1,7 +1,23 @@
 import axios from 'axios';
 
-// Remove a barra final, se existir
-const normalizeUrl = (url) => url.replace(/\/$/, '');
+// Normaliza URLs removendo barras finais duplicadas e um sufixo "/api" isolado
+const normalizeUrl = (rawUrl) => {
+  if (!rawUrl) return rawUrl;
+
+  const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
+
+  try {
+    const parsed = new URL(rawUrl);
+    const pathname = trimTrailingSlash(parsed.pathname);
+    // Remove o segmento final "/api" (com ou sem caminhos adicionais antes dele)
+    const sanitizedPath = pathname.replace(/\/api$/i, '');
+    parsed.pathname = sanitizedPath;
+    return trimTrailingSlash(parsed.toString());
+  } catch (error) {
+    const trimmed = trimTrailingSlash(rawUrl);
+    return trimTrailingSlash(trimmed.replace(/\/api$/i, ''));
+  }
+};
 
 // Detecta automaticamente a base do backend
 const resolveBaseURL = () => {

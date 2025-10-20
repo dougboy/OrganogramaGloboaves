@@ -17,15 +17,14 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
   }));
   const [logo, setLogo] = useState(null);
 
+  // Base URL normalizada
   const normalizedBase = (API_BASE_URL || '').replace(/\/$/, '');
 
+  // Monta a URL completa de uma imagem ou arquivo
   const buildAssetUrl = (path) => {
     if (!path) return null;
     const cleanPath = path.replace(/^\/+/, '');
-    if (!normalizedBase) {
-      return `/${cleanPath}`;
-    }
-    return `${normalizedBase}/${cleanPath}`;
+    return normalizedBase ? `${normalizedBase}/${cleanPath}` : `/${cleanPath}`;
   };
 
   useEffect(() => {
@@ -76,6 +75,7 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
+
           <div>
             <label className="text-sm font-medium text-slate-600" htmlFor="cnpj">
               CNPJ
@@ -89,6 +89,7 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
+
           <div>
             <label className="text-sm font-medium text-slate-600" htmlFor="description">
               Descrição breve
@@ -103,6 +104,7 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
             />
           </div>
         </div>
+
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium text-slate-600">Logotipo</label>
@@ -118,6 +120,7 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
                   className="h-16 w-16 rounded-2xl border border-slate-200 object-cover shadow-sm"
                 />
               )}
+
               <label className="inline-flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-primary hover:text-primary">
                 <span>Selecionar arquivo</span>
                 <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
@@ -125,9 +128,14 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
             </div>
             <p className="mt-1 text-xs text-slate-500">Formatos sugeridos: PNG ou JPG quadrado.</p>
           </div>
-          <ThemeSelector value={{ themeType: form.themeType, themeValue: form.themeValue }} onChange={handleThemeChange} />
+
+          <ThemeSelector
+            value={{ themeType: form.themeType, themeValue: form.themeValue }}
+            onChange={handleThemeChange}
+          />
         </div>
       </div>
+
       <div className="flex flex-wrap justify-end gap-3">
         {onCancel && (
           <button

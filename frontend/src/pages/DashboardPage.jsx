@@ -31,17 +31,17 @@ const DashboardPage = () => {
   const [message, setMessage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Base pública para construir URLs
   const publicBase = useMemo(() => (API_BASE_URL || '').replace(/\/$/, ''), []);
 
+  // Gera uma URL pública para imagens
   const buildAssetUrl = (path) => {
     if (!path) return null;
     const cleanPath = path.replace(/^\/+/, '');
-    if (!publicBase) {
-      return `/${cleanPath}`;
-    }
-    return `${publicBase}/${cleanPath}`;
+    return publicBase ? `${publicBase}/${cleanPath}` : `/${cleanPath}`;
   };
 
+  // Carrega as empresas cadastradas
   useEffect(() => {
     const loadCompanies = async () => {
       try {
@@ -54,9 +54,7 @@ const DashboardPage = () => {
               company.public_url && company.public_url.startsWith('http')
                 ? company.public_url
                 : company.slug
-                ? publicBase
-                  ? `${publicBase}/empresa/${company.slug}`
-                  : `/empresa/${company.slug}`
+                ? `${publicBase}/empresa/${company.slug}`
                 : null,
           }))
         );
@@ -69,10 +67,10 @@ const DashboardPage = () => {
         setLoadingCompanies(false);
       }
     };
-
     loadCompanies();
   }, [publicBase]);
 
+  // Temporizador para mensagens automáticas
   useEffect(() => {
     if (!message) return undefined;
     const timer = setTimeout(() => setMessage(null), 5000);
@@ -87,15 +85,11 @@ const DashboardPage = () => {
         company.public_url && company.public_url.startsWith('http')
           ? company.public_url
           : company.slug
-          ? publicBase
-            ? `${publicBase}/empresa/${company.slug}`
-            : `/empresa/${company.slug}`
+          ? `${publicBase}/empresa/${company.slug}`
           : null,
     }));
     setCompanies(mapped);
-    if (selectId) {
-      await handleSelectCompany(selectId);
-    }
+    if (selectId) await handleSelectCompany(selectId);
   };
 
   const handleSelectCompany = async (id) => {
@@ -256,11 +250,13 @@ const DashboardPage = () => {
             </button>
           </div>
         </div>
+
         {message && (
           <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
             {message}
           </div>
         )}
+
         {companyFormOpen && (
           <div className="mt-6 rounded-3xl border border-slate-200/70 bg-white/90 p-6">
             <CompanyForm
@@ -274,6 +270,7 @@ const DashboardPage = () => {
             />
           </div>
         )}
+
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {loadingCompanies && <p className="text-sm text-slate-500">Carregando empresas...</p>}
           {!loadingCompanies && companies.length === 0 && (
@@ -300,11 +297,14 @@ const DashboardPage = () => {
           <div className="rounded-3xl border border-slate-200 bg-white/85 p-8 shadow-soft">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-semibold text-slate-900">Equipe — {activeCompany.name}</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  Equipe — {activeCompany.name}
+                </h2>
                 <p className="text-sm text-slate-500">
                   Cadastre, edite e gerencie os vínculos hierárquicos da equipe.
                 </p>
               </div>
+
               <div className="flex flex-wrap items-center gap-3">
                 {activeCompany.public_url && (
                   <a
@@ -316,6 +316,7 @@ const DashboardPage = () => {
                     Abrir organograma público
                   </a>
                 )}
+
                 <button
                   type="button"
                   onClick={handleGenerateOrganogram}
@@ -326,24 +327,33 @@ const DashboardPage = () => {
                 </button>
               </div>
             </div>
+
             <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,_1.1fr)_minmax(0,_0.9fr)]">
               <div className="space-y-6">
                 <div className="rounded-3xl border border-slate-200/70 bg-white/90 p-6">
                   <h3 className="text-lg font-semibold text-slate-800">Adicionar colaborador</h3>
                   <CollaboratorForm
                     collaborators={collaborators}
-                    onSubmit={editingCollaborator ? handleUpdateCollaborator : handleCreateCollaborator}
+                    onSubmit={
+                      editingCollaborator
+                        ? handleUpdateCollaborator
+                        : handleCreateCollaborator
+                    }
                     onCancel={() => setEditingCollaborator(null)}
                     initialData={editingCollaborator || undefined}
-                    submitLabel={editingCollaborator ? 'Atualizar colaborador' : 'Cadastrar colaborador'}
+                    submitLabel={
+                      editingCollaborator ? 'Atualizar colaborador' : 'Cadastrar colaborador'
+                    }
                   />
                 </div>
+
                 <CollaboratorList
                   collaborators={collaborators}
                   onEdit={(collaborator) => setEditingCollaborator(collaborator)}
                   onDelete={handleDeleteCollaborator}
                 />
               </div>
+
               <OrganogramPreview collaborators={collaborators} company={activeCompany} />
             </div>
           </div>

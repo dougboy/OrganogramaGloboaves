@@ -19,9 +19,53 @@ const normalizeUrl = (rawUrl) => {
   }
 };
 
+// Detecta se o hostname é local
+const isLocalhostHostname = (hostname) =>
+  ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname);
+
+// Adapta URLs locais (ex: localhost) para funcionar em Codespaces e ambientes remotos
+const adaptEnvUrlForRemoteHost = (rawUrl) => {
+  if (typeof window === 'undefined' || !rawUrl) {
+    return rawUrl;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    if (!isLocalhostHostname(parsed.hostname)) {
+      return rawUrl;
+    }
+
+    const currentHost = window.location.hostname;
+    if (!currentHost || isLocalhostHostname(currentHost)) {
+      return rawUrl;
+    }
+
+    const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+    const githubDevMatch = currentHost.match(/^(.*)-(\d+)\.app\.github\.dev$/);
+
+    if (githubDevMatch) {
+      const [, prefix] = githubDevMatch;
+      parsed.hostname = `${prefix}-${port}.app.github.dev`;
+      parsed.port = '';
+      return parsed.toString();
+    }
+
+    parsed.hostname = currentHost;
+    if (port && !['80', '443'].includes(port)) {
+      parsed.port = port;
+    } else {
+      parsed.port = '';
+    }
+
+    return parsed.toString();
+  } catch (error) {
+    return rawUrl;
+  }
+};
+
 // Detecta automaticamente a base do backend
 const resolveBaseURL = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  const envUrl = adaptEnvUrlForRemoteHost(import.meta.env.VITE_API_URL);
   if (envUrl) {
     return normalizeUrl(envUrl);
   }

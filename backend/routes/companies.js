@@ -52,13 +52,24 @@ const buildPublicPath = (filePath, req) => {
 };
 
 // 🔧 Serializa empresa e colaboradores com URLs completas
+const organogramsDir = path.join(__dirname, '..', 'public', 'organogramas');
+
+const hasGeneratedOrganogram = (slug) => {
+  if (!slug) return false;
+  const indexPath = path.join(organogramsDir, slug, 'index.html');
+  return fs.pathExistsSync(indexPath);
+};
+
 const serializeCompany = (company, req) => {
   if (!company) return null;
   const baseUrl = resolvePublicBase(req);
   return {
     ...company,
     logo_url: buildPublicPath(company.logo_path, req),
-    public_url: company.slug ? `${baseUrl}/empresa/${company.slug}` : null,
+    public_url:
+      company.slug && hasGeneratedOrganogram(company.slug)
+        ? `${baseUrl}/empresa/${company.slug}`
+        : null,
   };
 };
 

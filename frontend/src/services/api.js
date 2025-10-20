@@ -19,9 +19,11 @@ const normalizeUrl = (rawUrl) => {
   }
 };
 
+// Detecta se o hostname é local
 const isLocalhostHostname = (hostname) =>
   ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname);
 
+// Adapta URLs locais (ex: localhost) para funcionar em Codespaces e ambientes remotos
 const adaptEnvUrlForRemoteHost = (rawUrl) => {
   if (typeof window === 'undefined' || !rawUrl) {
     return rawUrl;

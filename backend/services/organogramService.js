@@ -3,9 +3,8 @@ const fs = require('fs-extra');
 const { create } = require('express-handlebars');
 
 const hbs = create({
-  layoutsDir: path.join(__dirname, '..', 'views', 'layouts'),
-  partialsDir: path.join(__dirname, '..', 'views', 'partials'),
-  extname: '.handlebars'
+  extname: '.handlebars',
+  defaultLayout: false
 });
 
 const normalizeTheme = (company) => {

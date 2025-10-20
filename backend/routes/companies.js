@@ -11,10 +11,14 @@ const { generateOrganogram } = require('../services/organogramService');
 
 const router = express.Router();
 
+// Garante que o diretório de logos exista mesmo em instalações frescas
+const logosDir = path.join(__dirname, '..', 'uploads', 'logos');
+fs.ensureDirSync(logosDir);
+
 // Configuração de upload para logotipos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads', 'logos'));
+    cb(null, logosDir);
   },
   filename: (req, file, cb) => {
     const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;

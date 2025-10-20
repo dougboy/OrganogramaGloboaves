@@ -1,11 +1,69 @@
 import axios from 'axios';
 
-// Remove a barra final, se existir
-const normalizeUrl = (url) => url.replace(/\/$/, '');
+// Normaliza URLs removendo barras finais duplicadas e um sufixo "/api" isolado
+const normalizeUrl = (rawUrl) => {
+  if (!rawUrl) return rawUrl;
+
+  const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
+
+  try {
+    const parsed = new URL(rawUrl);
+    const pathname = trimTrailingSlash(parsed.pathname);
+    // Remove o segmento final "/api" (com ou sem caminhos adicionais antes dele)
+    const sanitizedPath = pathname.replace(/\/api$/i, '');
+    parsed.pathname = sanitizedPath;
+    return trimTrailingSlash(parsed.toString());
+  } catch (error) {
+    const trimmed = trimTrailingSlash(rawUrl);
+    return trimTrailingSlash(trimmed.replace(/\/api$/i, ''));
+  }
+};
+
+const isLocalhostHostname = (hostname) =>
+  ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname);
+
+const adaptEnvUrlForRemoteHost = (rawUrl) => {
+  if (typeof window === 'undefined' || !rawUrl) {
+    return rawUrl;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    if (!isLocalhostHostname(parsed.hostname)) {
+      return rawUrl;
+    }
+
+    const currentHost = window.location.hostname;
+    if (!currentHost || isLocalhostHostname(currentHost)) {
+      return rawUrl;
+    }
+
+    const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+    const githubDevMatch = currentHost.match(/^(.*)-(\d+)\.app\.github\.dev$/);
+
+    if (githubDevMatch) {
+      const [, prefix] = githubDevMatch;
+      parsed.hostname = `${prefix}-${port}.app.github.dev`;
+      parsed.port = '';
+      return parsed.toString();
+    }
+
+    parsed.hostname = currentHost;
+    if (port && !['80', '443'].includes(port)) {
+      parsed.port = port;
+    } else {
+      parsed.port = '';
+    }
+
+    return parsed.toString();
+  } catch (error) {
+    return rawUrl;
+  }
+};
 
 // Detecta automaticamente a base do backend
 const resolveBaseURL = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  const envUrl = adaptEnvUrlForRemoteHost(import.meta.env.VITE_API_URL);
   if (envUrl) {
     return normalizeUrl(envUrl);
   }

@@ -9,13 +9,13 @@ const normalizeUrl = (rawUrl) => {
   try {
     const parsed = new URL(rawUrl);
     const pathname = trimTrailingSlash(parsed.pathname);
-    // Remove o segmento final "/api" (com ou sem caminhos adicionais antes dele)
-    const sanitizedPath = pathname.replace(/\/api$/i, '');
+    // Remove o segmento final "/api" ou "/auth" (com ou sem caminhos adicionais antes deles)
+    const sanitizedPath = pathname.replace(/\/(api|auth)$/i, '');
     parsed.pathname = sanitizedPath;
     return trimTrailingSlash(parsed.toString());
   } catch (error) {
     const trimmed = trimTrailingSlash(rawUrl);
-    return trimTrailingSlash(trimmed.replace(/\/api$/i, ''));
+    return trimTrailingSlash(trimmed.replace(/\/(api|auth)$/i, ''));
   }
 };
 

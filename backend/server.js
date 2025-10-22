@@ -52,7 +52,7 @@ app.get('/empresa/:slug', serveOrganogram);
 app.get('/empresa/:slug/', serveOrganogram);
 
 // Rotas principais
-app.use('/api', authRoutes);
+app.use(['/api', '/auth'], authRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/companies/:companyId/collaborators', authenticate, collaboratorRoutes);
 

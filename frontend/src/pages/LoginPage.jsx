@@ -20,7 +20,10 @@ const LoginPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const success = await login(form);
+    const success = await login({
+      username: form.username.trim(),
+      password: form.password,
+    });
     if (success) {
       navigate('/', { replace: true });
     }

@@ -22,18 +22,29 @@ const PASSWORD_HASH = isBcryptHash(ADMIN_PASSWORD)
 
 // Rota de login
 router.post('/login', (req, res) => {
-  const { username, password } = req.body;
+  const rawUsername = typeof req.body.username === 'string' ? req.body.username.trim() : '';
+  const rawPassword = typeof req.body.password === 'string' ? req.body.password : '';
 
-  if (username !== ADMIN_USER) {
+  if (!rawUsername || !rawPassword) {
+    return res.status(400).json({ message: 'Usuário e senha são obrigatórios.' });
+  }
+
+  const normalizedUser = ADMIN_USER.trim();
+  if (rawUsername !== normalizedUser) {
     return res.status(401).json({ message: 'Credenciais inválidas.' });
   }
 
-  const isValid = bcrypt.compareSync(password, PASSWORD_HASH);
-  if (!isValid) {
-    return res.status(401).json({ message: 'Credenciais inválidas.' });
+  try {
+    const isValid = bcrypt.compareSync(rawPassword, PASSWORD_HASH);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+  } catch (error) {
+    console.error('Erro ao validar senha do administrador:', error);
+    return res.status(500).json({ message: 'Erro ao validar credenciais.' });
   }
 
-  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '8h' });
+  const token = jwt.sign({ username: normalizedUser }, JWT_SECRET, { expiresIn: '8h' });
   return res.json({ token });
 });
 

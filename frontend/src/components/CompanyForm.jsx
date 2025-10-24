@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ThemeSelector from './ThemeSelector';
-import { API_BASE_URL } from '../services/api';
+import { getApiBaseUrl } from '../services/api';
 
 const defaultValues = {
   name: '',
@@ -18,7 +18,7 @@ const CompanyForm = ({ initialData, onSubmit, onCancel, submitLabel = 'Salvar' }
   const [logo, setLogo] = useState(null);
 
   // Base URL normalizada
-  const normalizedBase = (API_BASE_URL || '').replace(/\/$/, '');
+  const normalizedBase = (getApiBaseUrl() || '').replace(/\/$/, '');
 
   // Monta a URL completa de uma imagem ou arquivo
   const buildAssetUrl = (path) => {

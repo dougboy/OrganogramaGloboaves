@@ -102,16 +102,28 @@ const resolveBaseURL = () => {
   return normalizeUrl(`${protocol}//${hostname}`);
 };
 
-// Base URL final (usada globalmente)
-export const API_BASE_URL = resolveBaseURL();
+// Cache simples para evitar recomputar o endereço base várias vezes
+let cachedBaseUrl = null;
+
+export const getApiBaseUrl = () => {
+  if (cachedBaseUrl) {
+    return cachedBaseUrl;
+  }
+
+  cachedBaseUrl = resolveBaseURL();
+  return cachedBaseUrl;
+};
 
 // Criação da instância do axios
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
+const api = axios.create();
 
 // Interceptor para adicionar token JWT automaticamente
 api.interceptors.request.use((config) => {
+  const baseURL = getApiBaseUrl();
+  if (baseURL && !/^https?:\/\//i.test(config.url || '')) {
+    config.baseURL = baseURL;
+  }
+
   const token = localStorage.getItem('orgbuilder_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

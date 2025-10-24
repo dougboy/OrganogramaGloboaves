@@ -18,7 +18,7 @@ import {
   getCollaborators,
   updateCollaborator,
 } from '../services/collaborators';
-import { API_BASE_URL } from '../services/api';
+import { getApiBaseUrl } from '../services/api';
 
 const DashboardPage = () => {
   const [companies, setCompanies] = useState([]);
@@ -32,7 +32,7 @@ const DashboardPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Base pública para construir URLs
-  const publicBase = useMemo(() => (API_BASE_URL || '').replace(/\/$/, ''), []);
+  const publicBase = useMemo(() => (getApiBaseUrl() || '').replace(/\/$/, ''), []);
 
   // Gera uma URL pública para imagens
   const buildAssetUrl = (path) => {
